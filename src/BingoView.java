@@ -1,84 +1,68 @@
-import java.awt.BorderLayout;
-import java.awt.Container;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.net.BindException;
+import java.net.Socket;
 import java.util.Random;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-public class BingoBoard extends JFrame {
+public class BingoView extends JFrame {
+	BingoModel m;
+	BingoStart bs;
+	BingoBoard bb;
+	BingoView(BingoModel m){
+		this.m = m;
+		bs = new BingoStart();
+		bb = new BingoBoard();
+		bs.userName.setText("user1");
+		bs.IP_addr.setText("127.0.0.1");
+		bs.port.setText("4545");
+	}
+}
+/**
+ * 
+ */
+class BingoBoard extends JFrame {
 
 	private JPanel contentPane;
 	private JButton[] NumButton=new JButton[25];
 	private int[] check=new int[25];
- 
+	
+	JButton SendButton;
+	JButton ReadyButton;
+	JButton RanButton;
+	
 	private JPanel panel;
 	private JTextField textField;
- 
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		
-		try {
-			Bingo_start bs = new Bingo_start();
-			bs.connect_btn.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					// TODO Auto-generated method stub
-					bs.connect();
-					bs.setVisible(false);
-				}
-				
-			});
-			
-			bs.exit_btn.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					// TODO Auto-generated method stub
-					System.exit(0);
-				}
-				
-			});
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-	}
 	
-	
-	/**
-	 * Create the frame.
-	 */
-	public BingoBoard() {
+	BingoBoard() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(200, 200, 800, 550);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
-  
+		
 		panel = new JPanel();
 		panel.setBounds(20, 50, 350, 350);
 		contentPane.add(panel);
 		panel.setLayout(new GridLayout(5, 5, 3, 3));
-  
+		
 		JLabel mine = new JLabel("My BingoBoard");
 		mine.setBounds(100, 4, 310, 50);
 		mine.setFont(new Font("Serif", Font.BOLD, 25));
 		contentPane.add(mine);
-		
-		JButton RanButton = new JButton("Random Shuffle");
+	
+		RanButton = new JButton("Random Shuffle");
 		RanButton.setBounds(20, 410, 170, 70);
 		RanButton.setFont(new Font("Serif", Font.BOLD, 20));
 		contentPane.add(RanButton);
-		
-		JButton ReadyButton = new JButton("READY");
+	
+		ReadyButton = new JButton("READY");
 		ReadyButton.setBounds(200, 410, 170, 70);
 		ReadyButton.setFont(new Font("Serif", Font.BOLD, 25));
 		contentPane.add(ReadyButton);
@@ -92,7 +76,7 @@ public class BingoBoard extends JFrame {
 		contentPane.add(textField);
 		textField.setColumns(10);
 		
-		JButton SendButton = new JButton("Send");
+		SendButton = new JButton("Send");
 		SendButton.setBounds(690, 240, 78, 39);
 		contentPane.add(SendButton);
 		
@@ -107,8 +91,8 @@ public class BingoBoard extends JFrame {
 		}
 		
 		initButton();
-		this.setVisible(true);
 	}
+	
 	public void initButton(){
 		int cnt;
 		int[] nums=new int[25];
@@ -135,8 +119,7 @@ public class BingoBoard extends JFrame {
 			NumButton[i].addActionListener((ActionListener) new NumButtonEvent());
 		}
 	}
- 
-	
+
 	class NumButtonEvent implements ActionListener{ //버튼누르면 enable이 false로 바뀜
 		public void actionPerformed(ActionEvent e){
 			for(int i=0;i<25;i++){
@@ -149,16 +132,21 @@ public class BingoBoard extends JFrame {
 		}
 	}
 }
-class Bingo_start extends JFrame{
+/**
+ * 
+ *
+ */
+class BingoStart extends JFrame{
 	
 	private JPanel contentPane;
 	JTextField userName;
 	JTextField IP_addr;
 	JTextField port;
 	JButton connect_btn;
+	JButton create_btn;
 	JButton exit_btn;
 	
-	Bingo_start(){
+	BingoStart(){
 		super("BINGO GAME");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 300, 170);
@@ -192,26 +180,25 @@ class Bingo_start extends JFrame{
 		lblNewLabel_2.setBounds(12, 72, 80, 21);
 		contentPane.add(lblNewLabel_2);
 		
+		
 		port = new JTextField();
 		port.setBounds(95, 72, 45, 21);
 		contentPane.add(port);
 		port.setColumns(10);
 		
 		connect_btn = new JButton("Connect");
-		connect_btn.setBounds(12, 103, 120, 23);
+		connect_btn.setBounds(5, 103, 90, 23);
 		contentPane.add(connect_btn);
 		
+		create_btn = new JButton("Create");
+		create_btn.setBounds(100, 103, 90, 23);
+		contentPane.add(create_btn);
+		
 		exit_btn = new JButton("Exit");
-		exit_btn.setBounds(152, 103, 120, 23);
+		exit_btn.setBounds(195, 103, 80, 23);
 		contentPane.add(exit_btn);
 		
+		
 		this.setVisible(true);
-	}
-	public void connect() {
-		try {
-			BingoBoard bb = new BingoBoard();
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
 	}
 }

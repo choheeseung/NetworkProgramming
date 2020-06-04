@@ -8,19 +8,25 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.border.EmptyBorder;
 
-public class ChatServer implements Runnable {
-
-	public static ArrayList <String> Log = new ArrayList<> ();
-	BingoBoard bb;
-	private ChatServerRunnable clients[] = new ChatServerRunnable[3];
-	public int clientCount = 0;
+public class BingoServer implements Runnable{
 	
+	
+	public static ArrayList <String> Log = new ArrayList<> ();
+	private BingoServerRunnable clients[] = new BingoServerRunnable[3];
+	public int clientCount = 0;
+	BingoServerView bsv = null;
 	private int ePort = -1;
-	public ChatServer(String port, BingoBoard bb) {
+	
+	public BingoServer(String port) {
 		this.ePort = Integer.parseInt(port);
-		this.bb = bb;
+		bsv = new BingoServerView();
 	}
 
 	@Override
@@ -29,8 +35,8 @@ public class ChatServer implements Runnable {
 		ServerSocket serverSocket = null;
 		try {
 			serverSocket = new ServerSocket(ePort);
-			bb.textArea.append("Server started: socket created on"  + ePort+"\n");
-			bb.textArea.setCaretPosition(bb.textArea.getText().length());
+			bsv.log.append("Server started: socket created on"  + ePort+"\n");
+			bsv.log.setCaretPosition(bsv.log.getText().length());
 			while(true) {
 				addClient(serverSocket);
 			}
@@ -55,9 +61,9 @@ public class ChatServer implements Runnable {
 	public void putClient(int clientID, String inputLine) {
 		for (int i = 0; i < clientCount; i++)
 			if (clients[i].getClientID() == clientID) {
-				System.out.println("writer: "+clientID);
+				bsv.log.append("writer: "+clientID + "\n");
 			} else {
-				System.out.println("write: "+clients[i].getClientID());
+				bsv.log.append("write: "+clients[i].getClientID()+ "\n");
 				clients[i].out.println(inputLine);
 			}
 	}
@@ -71,21 +77,21 @@ public class ChatServer implements Runnable {
 			} catch (IOException i) {
 				JOptionPane.showMessageDialog(null, i, "ERROR", JOptionPane.WARNING_MESSAGE);
 			}
-			clients[clientCount] = new ChatServerRunnable(this, clientSocket);
+			clients[clientCount] = new BingoServerRunnable(this, clientSocket);
 			new Thread(clients[clientCount]).start();
 			clientCount++;
-			bb.textArea.append("Client connected: " + clientSocket.getPort()+", CurrentClient: " + clientCount+"\n");
-			bb.textArea.setCaretPosition(bb.textArea.getText().length());
+			bsv.log.append("Client connected: " + clientSocket.getPort()+", CurrentClient: " + clientCount+"\n");
+			bsv.log.setCaretPosition(bsv.log.getText().length());
 		} else {
 			try {
 				Socket dummySocket = serverSocket.accept();
-				ChatServerRunnable dummyRunnable = new ChatServerRunnable(this, dummySocket);
+				BingoServerRunnable dummyRunnable = new BingoServerRunnable(this, dummySocket);
 				new Thread(dummyRunnable);
 				dummyRunnable.out.println(dummySocket.getPort()
 						+ " < Sorry maximum user connected now");
-				bb.textArea.append("Client refused: maximum connection "
+				bsv.log.append("Client refused: maximum connection "
 						+ clients.length + " reached.");
-				bb.textArea.setCaretPosition(bb.textArea.getText().length());
+				bsv.log.setCaretPosition(bsv.log.getText().length());
 				dummyRunnable.close();
 			} catch (IOException i) {
 				System.out.println(i);
@@ -94,29 +100,28 @@ public class ChatServer implements Runnable {
 	}
 	public synchronized void delClient(int clientID) {
 		int pos = whoClient(clientID);
-		ChatServerRunnable endClient = null;
+		BingoServerRunnable endClient = null;
 	      if (pos >= 0) {
 	    	   endClient = clients[pos];
 	    	  if (pos < clientCount-1)
 	    		  for (int i = pos+1; i < clientCount; i++)
 	    			  clients[i-1] = clients[i];
 	    	  clientCount--;
-	    	  bb.textArea.append("Client removed: " + clientID
+	    	  bsv.log.append("Client removed: " + clientID
 	    			  + " at clients[" + pos +"], CurrentClient: " + clientCount);
-	    	  bb.textArea.setCaretPosition(bb.textArea.getText().length());
+	    	  bsv.log.setCaretPosition(bsv.log.getText().length());
 	    	  endClient.close();
 	      }
-	}
-
+	}	
 }
-class ChatServerRunnable implements Runnable {
-	protected ChatServer chatServer = null;
+class BingoServerRunnable implements Runnable {
+	protected BingoServer chatServer = null;
 	protected Socket clientSocket = null;
 	protected PrintWriter out = null;
 	protected BufferedReader in = null;
 	public int clientID = -1;
 	
-	public ChatServerRunnable (ChatServer server, Socket socket) {
+	public BingoServerRunnable (BingoServer server, Socket socket) {
 		this.chatServer = server;
 		this.clientSocket = socket;
 		clientID = clientSocket.getPort();
@@ -156,5 +161,26 @@ class ChatServerRunnable implements Runnable {
 		} catch (IOException i) {
 			
 		}
+	}
+}
+class BingoServerView extends JFrame {
+	private JPanel contentPane;
+	JTextArea log;
+	
+	BingoServerView(){
+		super("BINGO SERVER");
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setBounds(100, 100, 600, 430);
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		setContentPane(contentPane);
+		
+		log = new JTextArea(20, 50);
+		log.setEditable(false);
+		JScrollPane scrollPane = new JScrollPane(log);
+		scrollPane.setBounds(400, 50, 368, 178);
+		contentPane.add(scrollPane);
+		
+		setVisible(true);
 	}
 }

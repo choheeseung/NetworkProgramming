@@ -1,21 +1,32 @@
+import java.io.IOException;
+import java.net.BindException;
+import java.net.Socket;
+
+/**
+ * Bingo의 Control과 관련된 클래스
+ * 
+ */
 public class BingoControl {
-	BingoModel m;
-	BingoView v;
 	
-	BingoControl(BingoModel model, BingoView view){
+	BingoModel m;
+	int serverPort;
+	String userName = "";
+	String eServer = "";
+	int ePort = 0000;
+	Thread th;
+	Socket chatSocket = null;
+	ClientSender cs;
+	
+	BingoControl(BingoModel model){
 		this.m = model;
-		this.v = view;
 	}
 	
 	public void connect() {
-		System.out.println("connect");
-		v.bs.setVisible(false);
-		v.bb.setVisible(true);
+		
 	}
 	
 	public void createServer() {
 		
-		System.out.println("createServer");
 	}
 	
 	public void Random() {

@@ -2,18 +2,12 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.util.Random;
 import java.util.Scanner;
 
+import javax.net.ssl.SSLSocket;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -25,15 +19,20 @@ import javax.swing.border.EmptyBorder;
 
 class ClientSender implements Runnable {
 	
-	private Socket chatSocket = null;
+	private SSLSocket chatSocket = null;
+	String sServer;
+	int port;
+	
 	PrintWriter out = null;
 	BingoBoard bb;
 	
 	DataInputStream dis;
 	DataOutputStream dos;	
 	
-	ClientSender(Socket socket, BingoBoard bb){
+	ClientSender(SSLSocket socket, String sServer, int sPort, BingoBoard bb){
 		this.chatSocket = socket;
+		this.sServer = sServer;
+		this.port = sPort;
 		this.bb = bb;
 	}
 	
@@ -82,14 +81,15 @@ class ClientSender implements Runnable {
 
 		t.start();			
 	}
-	
 }
 class ClientReceiver implements Runnable{
-	private Socket chatSocket = null;
+	private SSLSocket chatSocket = null;
+	int port;
 	BingoBoard bb;
 	
-	ClientReceiver(Socket socket, BingoBoard bb){
+	ClientReceiver(SSLSocket socket, int sPort, BingoBoard bb){
 		this.chatSocket = socket;
+		this.port = sPort;
 		this.bb = bb;
 	}
 	
@@ -99,6 +99,7 @@ class ClientReceiver implements Runnable{
 			try {
 				in = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
 				String readSome = null;
+				
 				while((readSome = in.readLine())!= null) {
 					bb.textArea.append(readSome + "\n");
 				}
@@ -106,7 +107,7 @@ class ClientReceiver implements Runnable{
 				chatSocket.close();
 			} catch(IOException i) {
 				try {
-					if(in != null)in.close();
+					if(in != null) in.close();
 					if(chatSocket != null) chatSocket.close();
 				} catch(IOException e) {
 				}
@@ -150,13 +151,15 @@ class BingoBoard extends JFrame {
 	
 		RanButton = new JButton("Random Shuffle");
 		RanButton.setBounds(20, 410, 170, 70);
-		RanButton.setFont(new Font("Serif", Font.BOLD, 20));
+		RanButton.setFont(new Font("Serif", Font.BOLD, 17));
 		contentPane.add(RanButton);
+		RanButton.addActionListener((ActionListener) new RanButtonEvent());
 	
 		ReadyButton = new JButton("READY");
 		ReadyButton.setBounds(200, 410, 170, 70);
 		ReadyButton.setFont(new Font("Serif", Font.BOLD, 25));
 		contentPane.add(ReadyButton);
+		ReadyButton.addActionListener((ActionListener) new ReadyButtonEvent());
 		
 		textArea = new JTextArea();
 		textArea.setEditable(false);
@@ -185,10 +188,6 @@ class BingoBoard extends JFrame {
 			NumButton[i].setEnabled(false);
 		}
 		
-		initButton();
-	}
-	
-	public void initButton(){
 		int cnt;
 		int[] nums=new int[25];
 		Random rand=new Random();
@@ -211,6 +210,7 @@ class BingoBoard extends JFrame {
 			NumButton[i]=new JButton(""+nums[i]);
 			NumButton[i].setFont(new Font("Serif", Font.BOLD, 25));
 			panel.add(NumButton[i]);
+			NumButton[i].setEnabled(false); //enable이 false였다가 Ready누르면 활성화
 			NumButton[i].addActionListener((ActionListener) new NumButtonEvent());
 		}
 	}
@@ -224,6 +224,53 @@ class BingoBoard extends JFrame {
 					check[i]=1;
 				}
 			}
+		}
+	}
+	class RanButtonEvent implements ActionListener{
+		public void actionPerformed(ActionEvent e) {
+			int cnt;
+			int[] nums=new int[25];
+			Random rand=new Random();
+			for(int j=0;j<25;j++){
+				while(true){
+					cnt=0;
+					nums[j]=rand.nextInt(25)+1;
+					//랜덤으로 중복된 숫자 빼기
+					for(int k=0;k<j;k++){
+						if(nums[j]==nums[k]){
+							cnt++;
+						}
+					}
+					if(cnt==0){break;}
+				}
+			}
+	  
+			for(int i=0;i<25;i++){
+				check[i]=0;
+				panel.remove(NumButton[i]);
+				panel.revalidate();
+				panel.repaint();
+				NumButton[i]=new JButton(""+nums[i]);
+				NumButton[i].setFont(new Font("Serif", Font.BOLD, 25));
+				panel.add(NumButton[i]);
+				NumButton[i].setEnabled(false);
+				NumButton[i].addActionListener((ActionListener) new NumButtonEvent());
+			}
+		}
+	}
+	
+	/**Ready버튼 눌렀을 때
+	 * 
+	 * 빙고판 활성화, 랜덤버튼비활성화
+	 *
+	 */
+	class ReadyButtonEvent implements ActionListener{
+		public void actionPerformed(ActionEvent e) {
+			for(int i=0;i<25;i++) {
+				NumButton[i].setEnabled(true);
+			}
+			RanButton.setEnabled(false);
+			ReadyButton.setEnabled(false);
 		}
 	}
 }

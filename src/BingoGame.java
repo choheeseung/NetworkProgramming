@@ -2,8 +2,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.BindException;
+import java.net.InetAddress;
 import java.net.Socket;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -14,8 +17,9 @@ import javax.swing.border.EmptyBorder;
 
 public class BingoGame {
 	static BingoBoard bb;
-	static Socket chatSocket = null;
-
+	static InetAddress inetaddr = null;
+	static SSLSocket chatSocket = null;
+	static SSLSocketFactory sslSocketFactory = null;
 	
 	
 	public static void main(String[] args) {
@@ -44,7 +48,15 @@ public class BingoGame {
 					String eServer = bingostart.IP_addr.getText();
 					int ePort = Integer.parseInt(bingostart.port.getText());
 					try {
-						chatSocket = new Socket(eServer, ePort);
+						System.setProperty("javax.net.ssl.trustStore", "trustedcerts");
+						System.setProperty("javax.net.ssl.trustStorePassword", "123456");
+						
+						inetaddr = InetAddress.getByName(eServer);
+						sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+						
+						chatSocket = (SSLSocket) sslSocketFactory.createSocket(inetaddr, ePort);
+						//chatSocket.startHandshake();
+						
 						// clientID = chatSocket.getLocalPort();
 					} catch (BindException b) {
 						System.out.println("Can't bind on: "+ePort);
@@ -55,8 +67,8 @@ public class BingoGame {
 					}
 					
 					bb = new BingoBoard();
-					new Thread(new ClientReceiver(chatSocket, bb)).start();
-					new Thread(new ClientSender(chatSocket, bb)).start();
+					new Thread(new ClientSender(chatSocket, eServer, ePort, bb)).start();
+					new Thread(new ClientReceiver(chatSocket, ePort, bb)).start();
 					
 					bb.setVisible(true);
 				}

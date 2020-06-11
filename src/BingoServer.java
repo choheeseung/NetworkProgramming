@@ -1,13 +1,11 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.BindException;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 
+import javax.net.ssl.*;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -15,15 +13,23 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
+
 public class BingoServer implements Runnable{
-	
-	
 	public static ArrayList <String> Log = new ArrayList<> ();
 	private BingoServerRunnable clients[] = new BingoServerRunnable[3];
 	public int clientCount = 0;
 	BingoServerView bsv = null;
 	private int ePort = -1;
 	
+	private KeyStore ks;
+    private KeyManagerFactory kmf;
+    private SSLContext sc;
+    SSLServerSocketFactory sslServerSocketFactory = null;
+    SSLServerSocket sslServerSocket = null;
+    SSLSocket sslSocket = null;
+	
+    final String runRoot = "C:\\Users\\Heeseung\\git\\NetworkProgramming\\bin\\";  // root change : your system root
+    
 	public BingoServer(String port) {
 		this.ePort = Integer.parseInt(port);
 		bsv = new BingoServerView();
@@ -32,9 +38,25 @@ public class BingoServer implements Runnable{
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
-		ServerSocket serverSocket = null;
+		SSLServerSocket serverSocket = null;
+		String ksName = runRoot + ".keystore\\SSLSocketServerKey";
+		
+		char keyStorePass[] = "123456".toCharArray();
+		char keyPass[] = "123456".toCharArray();
+		
 		try {
-			serverSocket = new ServerSocket(ePort);
+			ks = KeyStore.getInstance("JKS");
+			ks.load(new FileInputStream(ksName), keyStorePass);
+			
+			kmf = KeyManagerFactory.getInstance("SunX509");
+			kmf.init(ks, keyPass);
+			
+			sc = SSLContext.getInstance("TLS");
+			sc.init(kmf.getKeyManagers(), null, null);
+			
+			sslServerSocketFactory = sc.getServerSocketFactory();
+			sslServerSocket = (SSLServerSocket) sslServerSocketFactory.createServerSocket(ePort);
+			
 			bsv.log.append("Server started: socket created on"  + ePort+"\n");
 			bsv.log.setCaretPosition(bsv.log.getText().length());
 			while(true) {
@@ -44,6 +66,21 @@ public class BingoServer implements Runnable{
 			JOptionPane.showMessageDialog(null, "Can't bind on: "+ePort, "ERROR", JOptionPane.WARNING_MESSAGE);
 		} catch (IOException i) {
 			JOptionPane.showMessageDialog(null, i, "ERROR", JOptionPane.WARNING_MESSAGE);
+		} catch (KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CertificateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnrecoverableKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (KeyManagementException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} finally {
 			try {
 				if (serverSocket != null) serverSocket.close();
@@ -67,12 +104,12 @@ public class BingoServer implements Runnable{
 				clients[i].out.println(inputLine);
 			}
 	}
-	public void addClient(ServerSocket serverSocket) {
-		Socket clientSocket = null;
+	public void addClient(SSLServerSocket serverSocket) {
+		SSLSocket clientSocket = null;
 		
 		if (clientCount < clients.length) { 
 			try {
-				clientSocket = serverSocket.accept();
+				clientSocket = (SSLSocket) sslServerSocket.accept();
 				clientSocket.setSoTimeout(40000); // 1000/sec
 			} catch (IOException i) {
 				JOptionPane.showMessageDialog(null, i, "ERROR", JOptionPane.WARNING_MESSAGE);
@@ -84,7 +121,7 @@ public class BingoServer implements Runnable{
 			bsv.log.setCaretPosition(bsv.log.getText().length());
 		} else {
 			try {
-				Socket dummySocket = serverSocket.accept();
+				SSLSocket dummySocket = (SSLSocket) serverSocket.accept();
 				BingoServerRunnable dummyRunnable = new BingoServerRunnable(this, dummySocket);
 				new Thread(dummyRunnable);
 				dummyRunnable.out.println(dummySocket.getPort()
@@ -116,12 +153,12 @@ public class BingoServer implements Runnable{
 }
 class BingoServerRunnable implements Runnable {
 	protected BingoServer chatServer = null;
-	protected Socket clientSocket = null;
+	protected SSLSocket clientSocket = null;
 	protected PrintWriter out = null;
 	protected BufferedReader in = null;
 	public int clientID = -1;
 	
-	public BingoServerRunnable (BingoServer server, Socket socket) {
+	public BingoServerRunnable (BingoServer server, SSLSocket socket) {
 		this.chatServer = server;
 		this.clientSocket = socket;
 		clientID = clientSocket.getPort();

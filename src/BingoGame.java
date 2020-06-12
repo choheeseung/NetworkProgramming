@@ -3,7 +3,6 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
-import java.net.Socket;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -16,24 +15,19 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
 public class BingoGame {
-	static BingoBoard bb;
-	static InetAddress inetaddr = null;
-	static SSLSocket chatSocket = null;
-	static SSLSocketFactory sslSocketFactory = null;
-	
-	
+	static String Server ="";
+	static int Port = 0000;
 	public static void main(String[] args) {
 		BingoStart bingostart = new BingoStart();
-		BingoModel model = new BingoModel();
-		BingoControl bc = new BingoControl(model);
 		
 		bingostart.userName.setText("user1");
 		bingostart.IP_addr.setText("127.0.0.1");
 		bingostart.port.setText("4545");
 		
-		/**
-		 * BingoStart에 connect 버튼 리스너
-		 */
+
+		Server = bingostart.IP_addr.getText();
+		Port = Integer.parseInt(bingostart.port.getText());
+		
 		bingostart.connect_btn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -44,33 +38,7 @@ public class BingoGame {
 				{
 					System.out.println("connect");
 					bingostart.setVisible(false);
-					
-					String eServer = bingostart.IP_addr.getText();
-					int ePort = Integer.parseInt(bingostart.port.getText());
-					try {
-						System.setProperty("javax.net.ssl.trustStore", "trustedcerts");
-						System.setProperty("javax.net.ssl.trustStorePassword", "123456");
-						
-						inetaddr = InetAddress.getByName(eServer);
-						sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-						
-						chatSocket = (SSLSocket) sslSocketFactory.createSocket(inetaddr, ePort);
-						//chatSocket.startHandshake();
-						
-						// clientID = chatSocket.getLocalPort();
-					} catch (BindException b) {
-						System.out.println("Can't bind on: "+ePort);
-						System.exit(1);
-					} catch (IOException i) {
-						System.out.println(i);
-						System.exit(1);
-					}
-					
-					bb = new BingoBoard();
-					new Thread(new ClientSender(chatSocket, eServer, ePort, bb)).start();
-					new Thread(new ClientReceiver(chatSocket, ePort, bb)).start();
-					
-					bb.setVisible(true);
+					new Thread(new BingoClient(Server, Port)).start();
 				}
 			}
 		});
@@ -86,8 +54,9 @@ public class BingoGame {
 				else
 				{
 					System.out.println("createServer");
+					new Thread(new BingoServer(Port)).start();
 					bingostart.create_btn.setEnabled(false);
-					new Thread(new BingoServer(bingostart.port.getText())).start();
+					
 				}
 			}
 		});

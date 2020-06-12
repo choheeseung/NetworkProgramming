@@ -2,12 +2,18 @@ import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.*;
-import java.net.Socket;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.Random;
 import java.util.Scanner;
 
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -17,108 +23,23 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-class ClientSender implements Runnable {
+
+public class BingoClient extends JFrame implements Runnable{
 	
-	private SSLSocket chatSocket = null;
-	String sServer;
-	int port;
+	static String eServer = "";
+	static int ePort = 0000;
 	
+	//SSL
+	BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 	PrintWriter out = null;
-	BingoBoard bb;
 	
-	DataInputStream dis;
-	DataOutputStream dos;	
+	SSLSocketFactory f = null;
+	SSLSocket c = null;
 	
-	ClientSender(SSLSocket socket, String sServer, int sPort, BingoBoard bb){
-		this.chatSocket = socket;
-		this.sServer = sServer;
-		this.port = sPort;
-		this.bb = bb;
-	}
+	BufferedWriter w = null;
+	BufferedReader r = null;
 	
-	public void run() {
-		try {
-			//데이터 전송을 위한 스트림 생성(입추력 모두)
-			//보조스트림으로 만들어서 데이터전송 작업을 편하게 ※다른 보조스트림 사용
-			out = new PrintWriter(chatSocket.getOutputStream(), true);
-			bb.SendButton.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					// TODO Auto-generated method stub
-					sendMessage();
-				}
-			});
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		
-	}
-	
-	void sendMessage() {
-		String msg = bb.textField.getText();
-		bb.textField.setText("");
-		bb.textArea.append(chatSocket.getLocalPort()+ " : " +msg+"\n");
-		
-		Thread t = new Thread() {
-
-			@Override
-
-			public void run() {
-
-				try { //UTF = 유니코드의 규약(포맷), 한글 깨지지 않게 해줌
-					out = new PrintWriter(chatSocket.getOutputStream(), true);
-					out.println(msg);
-					out.flush(); //계속 채팅 위해 close()하면 안됨				
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-			}
-
-		};
-
-		t.start();			
-	}
-}
-class ClientReceiver implements Runnable{
-	private SSLSocket chatSocket = null;
-	int port;
-	BingoBoard bb;
-	
-	ClientReceiver(SSLSocket socket, int sPort, BingoBoard bb){
-		this.chatSocket = socket;
-		this.port = sPort;
-		this.bb = bb;
-	}
-	
-	public void run() {
-		while (chatSocket.isConnected()) {
-			BufferedReader in = null;
-			try {
-				in = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
-				String readSome = null;
-				
-				while((readSome = in.readLine())!= null) {
-					bb.textArea.append(readSome + "\n");
-				}
-				in.close();
-				chatSocket.close();
-			} catch(IOException i) {
-				try {
-					if(in != null) in.close();
-					if(chatSocket != null) chatSocket.close();
-				} catch(IOException e) {
-				}
-				System.out.println("leave.");
-				System.exit(1);
-			}
-		}
-	}
-}
-class BingoBoard extends JFrame {
-
+	//View
 	private JPanel contentPane;
 	private JButton[] NumButton=new JButton[25];
 	private int[] check=new int[25];
@@ -131,7 +52,7 @@ class BingoBoard extends JFrame {
 	JTextField textField;
 	JTextArea textArea;
 	
-	BingoBoard() {
+	BingoClient(String server, int port){
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(200, 200, 800, 550);
 		contentPane = new JPanel();
@@ -175,8 +96,7 @@ class BingoBoard extends JFrame {
 		SendButton = new JButton("Send");
 		SendButton.setBounds(690, 240, 78, 39);
 		contentPane.add(SendButton);
-		
-		
+
 		
 		JPanel yourpanel = new JPanel();
 		yourpanel.setBounds(400, 291, 200, 200);
@@ -213,8 +133,138 @@ class BingoBoard extends JFrame {
 			NumButton[i].setEnabled(false); //enable이 false였다가 Ready누르면 활성화
 			NumButton[i].addActionListener((ActionListener) new NumButtonEvent());
 		}
+		setVisible(true);
+		
+		this.eServer = server;
+		this.ePort = port;
+	}
+	
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		try {
+			System.setProperty("javax.net.ssl.trustStore", "trustedcerts");
+			System.setProperty("javax.net.ssl.trustStorePassword", "123456");
+			
+			f = (SSLSocketFactory) SSLSocketFactory.getDefault();
+			c = (SSLSocket) f.createSocket(eServer, ePort);
+			
+			String[] supported = c.getSupportedCipherSuites();
+			c.setEnabledCipherSuites(supported);
+			c.startHandshake();
+			
+			new Thread(new ClientReceiver(c)).start();
+			
+			SendButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					// TODO Auto-generated method stub
+					String msg = textField.getText();
+					textField.setText("");
+					textArea.append(c.getLocalPort()+ " : " +msg+"\n");
+					Thread t = new Thread() {
+						public void run() {
+							try { //UTF = 유니코드의 규약(포맷), 한글 깨지지 않게 해줌
+								out = new PrintWriter(c.getOutputStream(), true);
+								out.println(msg);
+								out.flush(); //계속 채팅 위해 close()하면 안됨				
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
+					};
+					t.start();
+				}
+			});
+			
+			
+		} catch(IOException io) {
+			io.printStackTrace();
+			try {
+				r.close();
+				c.close();
+			} catch (IOException i) {
+			}
+		}
+		
+		//button listener
+	}
+	class ClientSender implements Runnable {
+		private SSLSocket chatSocket = null;
+		
+		ClientSender(SSLSocket socket){
+			this.chatSocket = socket;
+		}
+		
+		public void run() {
+			Scanner KeyIn = null;
+			PrintWriter out = null;
+			try {
+				KeyIn = new Scanner(System.in);
+				out = new PrintWriter(chatSocket.getOutputStream(),true);
+				String userInput = "";
+				System.out.println("Your are "+chatSocket.getLocalPort()+", Type Message (\"Bye.\" to leave) \n");
+				while((userInput = KeyIn.nextLine()) != null) {
+					out.println(userInput);
+					out.flush();
+					if(userInput.equalsIgnoreCase("Bye."))
+						break;
+				}
+				KeyIn.close();
+				out.close();
+				chatSocket.close();
+			} catch(IOException i) {
+				try {
+					if(out != null) out.close();
+					if(KeyIn != null) KeyIn.close();
+					if(chatSocket != null) chatSocket.close();
+				} catch (IOException e) {
+					
+				}
+				System.exit(1);
+			}
+		}
+		
 	}
 
+	class ClientReceiver implements Runnable{
+		private SSLSocket chatSocket = null;
+		
+		ClientReceiver(SSLSocket socket){
+			this.chatSocket = socket;
+		}
+		
+		public void run() {
+			while (chatSocket.isConnected()) {
+				BufferedReader in = null;
+				try {
+					in = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
+					String readSome = null;
+					while((readSome = in.readLine())!= null) {
+						textArea.append(readSome+"\n");
+					}
+					in.close();
+					chatSocket.close();
+				} catch(IOException i) {
+					try {
+						if(in != null)in.close();
+						if(chatSocket != null) chatSocket.close();
+					} catch(IOException e) {
+					}
+					System.out.println("leave.");
+					System.exit(1);
+				}
+			}
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	
 	class NumButtonEvent implements ActionListener{ //버튼누르면 enable이 false로 바뀜
 		public void actionPerformed(ActionEvent e){
 			for(int i=0;i<25;i++){

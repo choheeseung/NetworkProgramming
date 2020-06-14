@@ -9,6 +9,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.net.BindException;
+import java.net.InetAddress;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -29,15 +31,11 @@ public class BingoClient extends JFrame implements Runnable{
 	static String eServer = "";
 	static int ePort = 0000;
 	
-	//SSL
-	BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-	PrintWriter out = null;
-	
+	//SSL	
 	SSLSocketFactory f = null;
 	SSLSocket c = null;
-	
-	BufferedWriter w = null;
-	BufferedReader r = null;
+
+	static InetAddress inetaddr = null;
 	
 	//View
 	private JPanel contentPane;
@@ -147,76 +145,50 @@ public class BingoClient extends JFrame implements Runnable{
 			System.setProperty("javax.net.ssl.trustStorePassword", "123456");
 			
 			f = (SSLSocketFactory) SSLSocketFactory.getDefault();
+			inetaddr = InetAddress.getByName(eServer);
 			c = (SSLSocket) f.createSocket(eServer, ePort);
-			
-			String[] supported = c.getSupportedCipherSuites();
-			c.setEnabledCipherSuites(supported);
 			c.startHandshake();
 			
-			new Thread(new ClientReceiver(c)).start();
-			
-			SendButton.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					// TODO Auto-generated method stub
-					String msg = textField.getText();
-					textField.setText("");
-					textArea.append(c.getLocalPort()+ " : " +msg+"\n");
-					Thread t = new Thread() {
-						public void run() {
-							try { //UTF = 유니코드의 규약(포맷), 한글 깨지지 않게 해줌
-								out = new PrintWriter(c.getOutputStream(), true);
-								out.println(msg);
-								out.flush(); //계속 채팅 위해 close()하면 안됨				
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
-						}
-					};
-					t.start();
-				}
-			});
-			
-			
-		} catch(IOException io) {
-			io.printStackTrace();
-			try {
-				r.close();
-				c.close();
-			} catch (IOException i) {
-			}
+		} catch (BindException b) {
+			textArea.append("Can't bind on: "+ePort);
+			System.exit(1);
+		} catch (IOException i) {
+			System.out.println(i);
+			System.exit(1);
 		}
+		new Thread(new ClientReceiver(c)).start();
+		new Thread(new ClientSender(c)).start();
 		
 		//button listener
 	}
 	class ClientSender implements Runnable {
 		private SSLSocket chatSocket = null;
-		
+		//BufferedWriter out = null;
+		PrintWriter out = null;
 		ClientSender(SSLSocket socket){
 			this.chatSocket = socket;
 		}
 		
 		public void run() {
-			Scanner KeyIn = null;
-			PrintWriter out = null;
+			
 			try {
-				KeyIn = new Scanner(System.in);
+				//out = new BufferedWriter(new OutputStreamWriter(chatSocket.getOutputStream()));
 				out = new PrintWriter(chatSocket.getOutputStream(),true);
-				String userInput = "";
-				System.out.println("Your are "+chatSocket.getLocalPort()+", Type Message (\"Bye.\" to leave) \n");
-				while((userInput = KeyIn.nextLine()) != null) {
-					out.println(userInput);
-					out.flush();
-					if(userInput.equalsIgnoreCase("Bye."))
-						break;
-				}
-				KeyIn.close();
-				out.close();
-				chatSocket.close();
+				
+				SendButton.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						// TODO Auto-generated method stub
+						String userInput = textField.getText();
+						textField.setText("");
+						textArea.append(chatSocket.getLocalPort()+" : " + userInput+"\n");
+						out.println(userInput);
+						out.flush();
+					}
+				});
+				
 			} catch(IOException i) {
 				try {
-					if(out != null) out.close();
-					if(KeyIn != null) KeyIn.close();
 					if(chatSocket != null) chatSocket.close();
 				} catch (IOException e) {
 					
@@ -224,7 +196,6 @@ public class BingoClient extends JFrame implements Runnable{
 				System.exit(1);
 			}
 		}
-		
 	}
 
 	class ClientReceiver implements Runnable{
@@ -242,6 +213,7 @@ public class BingoClient extends JFrame implements Runnable{
 					String readSome = null;
 					while((readSome = in.readLine())!= null) {
 						textArea.append(readSome+"\n");
+						textArea.setCaretPosition(textArea.getText().length());
 					}
 					in.close();
 					chatSocket.close();
@@ -251,20 +223,12 @@ public class BingoClient extends JFrame implements Runnable{
 						if(chatSocket != null) chatSocket.close();
 					} catch(IOException e) {
 					}
-					System.out.println("leave.");
+					textArea.append("leave.");
 					System.exit(1);
 				}
 			}
 		}
 	}
-	
-	
-	
-	
-	
-	
-	
-	
 	class NumButtonEvent implements ActionListener{ //버튼누르면 enable이 false로 바뀜
 		public void actionPerformed(ActionEvent e){
 			for(int i=0;i<25;i++){

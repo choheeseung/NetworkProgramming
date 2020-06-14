@@ -22,7 +22,7 @@ public class BingoGame {
 		
 		bingostart.userName.setText("user1");
 		bingostart.IP_addr.setText("127.0.0.1");
-		bingostart.port.setText("4545");
+		bingostart.port.setText("8888");
 		
 
 		Server = bingostart.IP_addr.getText();

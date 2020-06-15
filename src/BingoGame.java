@@ -1,11 +1,3 @@
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.net.BindException;
-import java.net.InetAddress;
-
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -14,64 +6,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
-public class BingoGame {
-	static String Server ="";
-	static int Port = 0000;
-	public static void main(String[] args) {
-		BingoStart bingostart = new BingoStart();
-		
-		bingostart.userName.setText("user1");
-		bingostart.IP_addr.setText("127.0.0.1");
-		bingostart.port.setText("4545");
-		
-
-		Server = bingostart.IP_addr.getText();
-		Port = Integer.parseInt(bingostart.port.getText());
-		
-		bingostart.connect_btn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				if(bingostart.userName.getText().equals("")||bingostart.IP_addr.getText().equals("")||bingostart.port.getText().equals(""))
-					System.out.println("plz enter textfield!");
-				else
-				{
-					System.out.println("connect");
-					bingostart.setVisible(false);
-					new Thread(new BingoClient(Server, Port)).start();
-				}
-			}
-		});
-		/**
-		 * BingoStart에 create 버튼 리스너
-		 */
-		bingostart.create_btn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				if(bingostart.port.getText().equals(""))
-					System.out.println("plz enter port!");
-				else
-				{
-					System.out.println("createServer");
-					new Thread(new BingoServer(Port)).start();
-					bingostart.create_btn.setEnabled(false);
-					
-				}
-			}
-		});
-		/**
-		 * BingoStart에 exit 버튼 리스너
-		 */
-		bingostart.exit_btn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				System.exit(1);
-			}
-		});
-	}
-}
 class BingoStart extends JFrame{
 	
 	private JPanel contentPane;

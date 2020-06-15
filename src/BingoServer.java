@@ -1,3 +1,5 @@
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
@@ -5,9 +7,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.BindException;
 import java.net.SocketTimeoutException;
+import java.rmi.RemoteException;
 import java.security.KeyStore;
 import java.util.ArrayList;
+import java.util.Vector;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -22,33 +27,19 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
-public class BingoServer extends JFrame implements Runnable{
-	
+public class BingoServer extends JFrame implements RMIServer, Runnable{
+	static Vector<RMIClient> clientList;
 	private JPanel contentPane;
 	static JTextArea log;
 	
 	/*Multi Thread*/
 	private BingoServerRunnable clients[] = new BingoServerRunnable[3];
 	public int clientCount = 0;
-	private int Port = -1;
+	//private static int Port = -1;
+	static String Server ="";
+	static int Port = 0000;
 	
-	//SSL
-	KeyStore ks;
-	KeyManagerFactory kmf;
-	SSLContext sc;
-	
-	final String runRoot = "C:\\Users\\geun\\NP\\NetworkProgramming\\bin\\";  // root change : your system root
-
-	SSLServerSocketFactory ssf = null;
-	SSLServerSocket s = null;
-	SSLSocket c = null;
-	
-	ArrayList<String> list = new ArrayList <>();
-	
-	BufferedWriter w = null;
-	BufferedReader r = null;
-	
-	BingoServer(int port){
+	BingoServer(int port) throws RemoteException {
 		/*View*/
 		super("BINGO SERVER");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -68,52 +59,65 @@ public class BingoServer extends JFrame implements Runnable{
 		/**/
 		this.Port = port;
 	}
+	
+	BingoServer() throws RemoteException {
+		clientList = new Vector<RMIClient>();
+	}
 
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
 
+		final KeyStore ks;
+		final KeyManagerFactory kmf;
+		final SSLContext sc;
+		
+		final String runRoot = "C:\\Users\\Heeseung\\git\\NetworkProgramming\\bin\\";  // root change : your system root
+
+		SSLServerSocketFactory ssf = null;
+		SSLServerSocket s = null;
 		String ksName = runRoot +".keystore\\SSLSocketServerKey";
 		
 		char keyStorePass[] = "123456".toCharArray();
 		char keyPass[] = "123456".toCharArray();
-		
 		try {
 			ks = KeyStore.getInstance("JKS");
 			ks.load(new FileInputStream(ksName),keyStorePass);
+			
 			kmf = KeyManagerFactory.getInstance("SunX509");
 			kmf.init(ks, keyPass);
+			
 			sc = SSLContext.getInstance("TLS");
 			sc.init(kmf.getKeyManagers(), null, null);
 			
 			/* SSLServerSocket */
 			ssf = sc.getServerSocketFactory();
-			
 			s = (SSLServerSocket) ssf.createServerSocket(Port);
-			log.append("Server started: socket created on " + Port+"\n");
+			log.append ("Server started: socket created on " + Port+"\n");
 			printServerSocketInfo(s);
 			
-			while(true) {
+			while (true) {
 				addClient(s);
 			}
-			
+		} catch (BindException b) {
+			log.append("Can't bind on: "+Port);
 		} catch (SSLException se) {
 			log.append("SSL problem, exit~");
 			try {
-				w.close();
-				r.close();
 				s.close();
-				c.close();
 			} catch (IOException i) {
 			}
 		} catch (Exception e) {
 			log.append("What?? exit~");
 			try {
-				w.close();
-				r.close();
 				s.close();
-				c.close();
 			} catch (IOException i) {
+			}
+		} finally {
+			try {
+				if (s != null) s.close();
+			} catch (IOException i) {
+				System.out.println(i);
 			}
 		}
 	}
@@ -131,6 +135,7 @@ public class BingoServer extends JFrame implements Runnable{
 				log.append("write: "+clients[i].getClientID()+"\n");
 				clients[i].out.println(inputLine);
 			}
+		log.setCaretPosition(log.getText().length());
 	}
 	public void addClient(SSLServerSocket serverSocket) {
 		SSLSocket clientSocket = null;
@@ -141,22 +146,21 @@ public class BingoServer extends JFrame implements Runnable{
 				printSocketInfo(clientSocket);
 				//clientSocket.setSoTimeout(40000); // 1000/sec
 			} catch (IOException i) {
-				log.append ("Accept() fail: "+i+"\n");
+				log.append("Accept() fail: "+i);
 			}
 			clients[clientCount] = new BingoServerRunnable(this, clientSocket);
 			new Thread(clients[clientCount]).start();
 			clientCount++;
-			log.append ("Client connected: " + clientSocket.getPort()
-					+", CurrentClient: " + clientCount+"\n");
+			log.append ("Client connected: " + clientSocket.getPort()+", CurrentClient: " + clientCount + "\n");
+			log.setCaretPosition(log.getText().length());
 		} else {
 			try {
 				SSLSocket dummySocket = (SSLSocket)serverSocket.accept();
 				BingoServerRunnable dummyRunnable = new BingoServerRunnable(this, dummySocket);
 				new Thread(dummyRunnable);
-				dummyRunnable.out.println(dummySocket.getPort()
-						+ " < Sorry maximum user connected now"+"\n");
-				log.append("Client refused: maximum connection "
-						+ clients.length + " reached."+"\n");
+				dummyRunnable.out.write(dummySocket.getPort() + " < Sorry maximum user connected now");
+				log.append("Client refused: maximum connection " + clients.length + " reached.");
+				log.setCaretPosition(log.getText().length());
 				dummyRunnable.close();
 			} catch (IOException i) {
 				i.printStackTrace();
@@ -172,8 +176,8 @@ public class BingoServer extends JFrame implements Runnable{
 	    		  for (int i = pos+1; i < clientCount; i++)
 	    			  clients[i-1] = clients[i];
 	    	  clientCount--;
-	    	  log.append("Client removed: " + clientID
-	    			  + " at clients[" + pos +"], CurrentClient: " + clientCount+"\n");
+	    	  log.append("Client removed: " + clientID  + " at clients[" + pos +"], CurrentClient: " + clientCount+"\n");
+	    	  log.setCaretPosition(log.getText().length());
 	    	  endClient.close();
 	      }
 	}
@@ -187,10 +191,10 @@ public class BingoServer extends JFrame implements Runnable{
 		log.append("   Local address = "
 				+s.getLocalAddress().toString()+"\n");
 		log.append("   Local port = "+s.getLocalPort()+"\n");
-		System.out.println("   Need client authentication = "+s.getNeedClientAuth()+"\n");
+		log.append("   Need client authentication = "+s.getNeedClientAuth()+"\n");
 		SSLSession ss = s.getSession();
-		System.out.println("   Cipher suite = "+ss.getCipherSuite()+"\n");
-		System.out.println("   Protocol = "+ss.getProtocol()+"\n");
+		log.append("   Cipher suite = "+ss.getCipherSuite()+"\n");
+		log.append("   Protocol = "+ss.getProtocol()+"\n");
 	}
 	private static void printServerSocketInfo(SSLServerSocket s) {
 		log.append("Server socket class: "+s.getClass()+"\n");
@@ -199,6 +203,51 @@ public class BingoServer extends JFrame implements Runnable{
 		log.append("   Need client authentication = "+s.getNeedClientAuth()+"\n");
 		log.append("   Want client authentication = "+s.getWantClientAuth()+"\n");
 		log.append("   Use client mode = "+s.getUseClientMode()+"\n");
+		log.setCaretPosition(log.getText().length());
+	}
+	
+	public static void main(String[] args) throws RemoteException {
+		BingoStart bingostart = new BingoStart();
+		
+		bingostart.userName.setText("user1");
+		bingostart.IP_addr.setText("127.0.0.1");
+		bingostart.port.setText("8888");
+
+		Server = bingostart.IP_addr.getText();
+		Port = Integer.parseInt(bingostart.port.getText());
+		
+		/**
+		 * BingoStart에 create 버튼 리스너
+		 */
+		bingostart.create_btn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if(bingostart.port.getText().equals(""))
+					System.out.println("plz enter port!");
+				else
+				{
+					System.out.println("createServer");
+					try {
+						new Thread(new BingoServer(Port)).start();
+					} catch (RemoteException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					bingostart.setVisible(false);	
+				}
+			}
+		});
+		/**
+		 * BingoStart에 exit 버튼 리스너
+		 */
+		bingostart.exit_btn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				System.exit(1);
+			}
+		});
 	}
 }
 class BingoServerRunnable implements Runnable {

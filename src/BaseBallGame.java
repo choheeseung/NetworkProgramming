@@ -6,7 +6,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
-class BingoStart extends JFrame{
+class BaseBallStart extends JFrame{
 	
 	private JPanel contentPane;
 	JTextField userName;
@@ -16,8 +16,8 @@ class BingoStart extends JFrame{
 	JButton create_btn;
 	JButton exit_btn;
 	
-	BingoStart(){
-		super("BINGO GAME");
+	BaseBallStart(){
+		super("BASEBALL GAME");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 300, 170);
 		contentPane = new JPanel();

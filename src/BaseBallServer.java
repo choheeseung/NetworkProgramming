@@ -27,21 +27,21 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
-public class BingoServer extends JFrame implements RMIServer, Runnable{
+public class BaseBallServer extends JFrame implements RMIServer, Runnable{
 	static Vector<RMIClient> clientList;
 	private JPanel contentPane;
 	static JTextArea log;
 	
 	/*Multi Thread*/
-	private BingoServerRunnable clients[] = new BingoServerRunnable[3];
+	private BaseBallServerRunnable clients[] = new BaseBallServerRunnable[3];
 	public int clientCount = 0;
 	//private static int Port = -1;
 	static String Server ="";
 	static int Port = 0000;
 	
-	BingoServer(int port) throws RemoteException {
+	BaseBallServer(int port) throws RemoteException {
 		/*View*/
-		super("BINGO SERVER");
+		super("BASEBALL SERVER");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 600, 430);
 		contentPane = new JPanel();
@@ -60,7 +60,7 @@ public class BingoServer extends JFrame implements RMIServer, Runnable{
 		this.Port = port;
 	}
 	
-	BingoServer() throws RemoteException {
+	BaseBallServer() throws RemoteException {
 		clientList = new Vector<RMIClient>();
 	}
 
@@ -148,7 +148,7 @@ public class BingoServer extends JFrame implements RMIServer, Runnable{
 			} catch (IOException i) {
 				log.append("Accept() fail: "+i);
 			}
-			clients[clientCount] = new BingoServerRunnable(this, clientSocket);
+			clients[clientCount] = new BaseBallServerRunnable(this, clientSocket);
 			new Thread(clients[clientCount]).start();
 			clientCount++;
 			log.append ("Client connected: " + clientSocket.getPort()+", CurrentClient: " + clientCount + "\n");
@@ -156,7 +156,7 @@ public class BingoServer extends JFrame implements RMIServer, Runnable{
 		} else {
 			try {
 				SSLSocket dummySocket = (SSLSocket)serverSocket.accept();
-				BingoServerRunnable dummyRunnable = new BingoServerRunnable(this, dummySocket);
+				BaseBallServerRunnable dummyRunnable = new BaseBallServerRunnable(this, dummySocket);
 				new Thread(dummyRunnable);
 				dummyRunnable.out.write(dummySocket.getPort() + " < Sorry maximum user connected now");
 				log.append("Client refused: maximum connection " + clients.length + " reached.");
@@ -169,7 +169,7 @@ public class BingoServer extends JFrame implements RMIServer, Runnable{
 	}
 	public synchronized void delClient(int clientID) {
 		int pos = whoClient(clientID);
-		BingoServerRunnable endClient = null;
+		BaseBallServerRunnable endClient = null;
 	      if (pos >= 0) {
 	    	   endClient = clients[pos];
 	    	  if (pos < clientCount-1)
@@ -207,41 +207,41 @@ public class BingoServer extends JFrame implements RMIServer, Runnable{
 	}
 	
 	public static void main(String[] args) throws RemoteException {
-		BingoStart bingostart = new BingoStart();
+		BaseBallStart baseballstart = new BaseBallStart();
 		
-		bingostart.userName.setText("user1");
-		bingostart.IP_addr.setText("127.0.0.1");
-		bingostart.port.setText("8888");
+		baseballstart.userName.setText("user1");
+		baseballstart.IP_addr.setText("127.0.0.1");
+		baseballstart.port.setText("8888");
 
-		Server = bingostart.IP_addr.getText();
-		Port = Integer.parseInt(bingostart.port.getText());
+		Server = baseballstart.IP_addr.getText();
+		Port = Integer.parseInt(baseballstart.port.getText());
 		
 		/**
 		 * BingoStart에 create 버튼 리스너
 		 */
-		bingostart.create_btn.addActionListener(new ActionListener() {
+		baseballstart.create_btn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
-				if(bingostart.port.getText().equals(""))
+				if(baseballstart.port.getText().equals(""))
 					System.out.println("plz enter port!");
 				else
 				{
 					System.out.println("createServer");
 					try {
-						new Thread(new BingoServer(Port)).start();
+						new Thread(new BaseBallServer(Port)).start();
 					} catch (RemoteException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
-					bingostart.setVisible(false);	
+					baseballstart.setVisible(false);	
 				}
 			}
 		});
 		/**
 		 * BingoStart에 exit 버튼 리스너
 		 */
-		bingostart.exit_btn.addActionListener(new ActionListener() {
+		baseballstart.exit_btn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
@@ -250,14 +250,14 @@ public class BingoServer extends JFrame implements RMIServer, Runnable{
 		});
 	}
 }
-class BingoServerRunnable implements Runnable {
-	protected BingoServer bingoServer = null;
+class BaseBallServerRunnable implements Runnable {
+	protected BaseBallServer bingoServer = null;
 	protected SSLSocket clientSocket = null;
 	protected PrintWriter out = null;
 	protected BufferedReader in = null;
 	public int clientID = -1;
 	
-	public BingoServerRunnable (BingoServer server, SSLSocket socket) {
+	public BaseBallServerRunnable (BaseBallServer server, SSLSocket socket) {
 		this.bingoServer = server;
 		this.clientSocket = socket;
 		clientID = clientSocket.getPort();

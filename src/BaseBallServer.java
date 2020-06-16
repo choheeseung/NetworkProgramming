@@ -72,8 +72,9 @@ public class BaseBallServer extends JFrame implements RMIServer, Runnable{
 		final KeyManagerFactory kmf;
 		final SSLContext sc;
 		
-		final String runRoot = "C:\\Users\\Heeseung\\git\\NetworkProgramming\\bin\\";  // root change : your system root
-
+		//final String runRoot = "C:\\Users\\Heeseung\\git\\NetworkProgramming\\bin\\";  // root change : your system root
+		final String runRoot = "C:\\Users\\geun\\NP\\NetworkProgramming\\bin\\";  // root change : your system root
+		
 		SSLServerSocketFactory ssf = null;
 		SSLServerSocket s = null;
 		String ksName = runRoot +".keystore\\SSLSocketServerKey";
@@ -204,50 +205,6 @@ public class BaseBallServer extends JFrame implements RMIServer, Runnable{
 		log.append("   Want client authentication = "+s.getWantClientAuth()+"\n");
 		log.append("   Use client mode = "+s.getUseClientMode()+"\n");
 		log.setCaretPosition(log.getText().length());
-	}
-	
-	public static void main(String[] args) throws RemoteException {
-		BaseBallStart baseballstart = new BaseBallStart();
-		
-		baseballstart.userName.setText("user1");
-		baseballstart.IP_addr.setText("127.0.0.1");
-		baseballstart.port.setText("8888");
-
-		Server = baseballstart.IP_addr.getText();
-		Port = Integer.parseInt(baseballstart.port.getText());
-		
-		/**
-		 * BingoStart에 create 버튼 리스너
-		 */
-		baseballstart.create_btn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				if(baseballstart.port.getText().equals(""))
-					System.out.println("plz enter port!");
-				else
-				{
-					System.out.println("createServer");
-					try {
-						new Thread(new BaseBallServer(Port)).start();
-					} catch (RemoteException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-					baseballstart.setVisible(false);	
-				}
-			}
-		});
-		/**
-		 * BingoStart에 exit 버튼 리스너
-		 */
-		baseballstart.exit_btn.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				System.exit(1);
-			}
-		});
 	}
 }
 class BaseBallServerRunnable implements Runnable {

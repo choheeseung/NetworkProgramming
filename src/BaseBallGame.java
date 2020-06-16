@@ -1,3 +1,7 @@
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.rmi.RemoteException;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -5,7 +9,71 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+public class BaseBallGame{
+	
+	static String Server ="";
+	static int Port = 0;
+	public static void main(String[] args) throws RemoteException {
+		
+		
+		
+		BaseBallStart baseballstart = new BaseBallStart();
+		
+		baseballstart.userName.setText("user1");
+		baseballstart.IP_addr.setText("127.0.0.1");
+		baseballstart.port.setText("8888");
 
+		Server = baseballstart.IP_addr.getText();
+		Port = Integer.parseInt(baseballstart.port.getText());
+		
+		baseballstart.connect_btn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if(baseballstart.userName.getText().equals("")||baseballstart.IP_addr.getText().equals("")||baseballstart.port.getText().equals(""))
+					System.out.println("plz enter textfield!");
+				else
+				{
+					System.out.println("connect");
+					baseballstart.setVisible(false);
+					new Thread(new BaseBallClient(Server, Port)).start();
+				}
+			}
+			
+		});
+		/**
+		 * BingoStart에 create 버튼 리스너
+		 */
+		baseballstart.create_btn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if(baseballstart.port.getText().equals(""))
+					System.out.println("plz enter port!");
+				else
+				{
+					System.out.println("createServer");
+					try {
+						new Thread(new BaseBallServer(Port)).start();
+					} catch (RemoteException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+			}
+		});
+		/**
+		 * BingoStart에 exit 버튼 리스너
+		 */
+		baseballstart.exit_btn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				System.exit(1);
+			}
+		});
+	}
+}
 class BaseBallStart extends JFrame{
 	
 	private JPanel contentPane;

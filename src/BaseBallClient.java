@@ -49,6 +49,7 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 	JButton btnSend;
 	JButton btnGo;
 	JButton btnReady;
+	private JLabel Your;
 
 	/**
 	 * Create the frame.
@@ -69,6 +70,7 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 		MessageField = new JTextField();
 		MessageField.setBounds(509, 387, 188, 56);
 		contentPane.add(MessageField);
+		MessageField.setFont(new Font("Serif", Font.PLAIN, 14));
 		MessageField.setColumns(10);
 		
 		btnSend = new JButton("Send");
@@ -82,15 +84,18 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 		MessageArea = new JTextArea();
 		MessageArea.setBounds(509, 64, 267, 315);
 		contentPane.add(MessageArea);
+		MessageArea.setFont(new Font("Serif", Font.PLAIN, 14));
 		MessageArea.setEditable(false);
 		
 		NumField = new JTextField();
 		NumField.setBounds(258, 387, 169, 56);
 		contentPane.add(NumField);
+		NumField.setFont(new Font("Serif", Font.PLAIN, 14));
 		NumField.setColumns(10);
 		
 		MyArea = new JTextArea();
 		MyArea.setBounds(258, 64, 239, 315);
+		MyArea.setFont(new Font("Serif", Font.PLAIN, 14));
 		contentPane.add(MyArea);
 		
 		JLabel Chat = new JLabel("Chatting");
@@ -116,6 +121,12 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 		AnswerField.setColumns(10);
 		AnswerField.setBounds(12, 387, 169, 56);
 		contentPane.add(AnswerField);
+		AnswerField.setFont(new Font("Serif", Font.PLAIN, 14));
+		
+		Your = new JLabel("Your Board");
+		Your.setFont(new Font("Serif", Font.BOLD, 25));
+		Your.setBounds(60, 7, 169, 50);
+		contentPane.add(Your);
 		
 		setVisible(true);
 		
@@ -200,6 +211,17 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 						out.flush();
 					}
 				});
+				btnGo.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						// TODO Auto-generated method stub
+						String userInput = NumField.getText();
+						NumField.setText("");
+						MyArea.append(userInput+"\n");
+						out.println(userInput);
+						out.flush();
+					}
+				});
 				
 			} catch(IOException i) {
 				try {
@@ -229,6 +251,7 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 						MessageArea.append(readSome+"\n");
 						MessageArea.setCaretPosition(MessageArea.getText().length());
 					}
+
 					in.close();
 					chatSocket.close();
 				} catch(IOException i) {

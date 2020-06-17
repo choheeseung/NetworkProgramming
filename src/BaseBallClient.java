@@ -27,6 +27,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
+import javax.swing.SwingConstants;
 
 public class BaseBallClient extends JFrame implements Runnable {
 	
@@ -55,6 +56,9 @@ public class BaseBallClient extends JFrame implements Runnable {
 	JButton btnSend;
 	JButton btnGo;
 	JButton btnReady;
+	
+	public int[] answer;
+	public int[] num;
 
 	/**
 	 * Create the frame.
@@ -217,6 +221,17 @@ public class BaseBallClient extends JFrame implements Runnable {
 						out.flush();
 					}
 				});
+				btnGo.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						// TODO Auto-generated method stub
+						String userInput = NumField.getText();
+						NumField.setText("");
+						MyArea.append(userInput+"\n");
+						out.println(userInput);
+						out.flush();
+					}
+				});
 				
 			} catch(IOException i) {
 				try {
@@ -239,26 +254,47 @@ public class BaseBallClient extends JFrame implements Runnable {
 		public void run() {
 			while (chatSocket.isConnected()) {
 				BufferedReader in = null;
-				try {
-					in = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
-					String readSome = null;
-					while((readSome = in.readLine())!= null) {
-						MessageArea.append(readSome+"\n");
-						MessageArea.setCaretPosition(MessageArea.getText().length());
-					}
-					in.close();
-					chatSocket.close();
-				} catch(IOException i) {
+				if(btnSend.getActionListeners() != null) {
 					try {
-						if(in != null)in.close();
-						if(chatSocket != null) chatSocket.close();
-					} catch(IOException e) {
+						in = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
+						String readSome = null;
+						while((readSome = in.readLine())!= null) {
+							MessageArea.append(readSome+"\n");
+							MessageArea.setCaretPosition(MessageArea.getText().length());
+						}
+						in.close();
+						chatSocket.close();
+					} catch(IOException i) {
+						try {
+							if(in != null)in.close();
+							if(chatSocket != null) chatSocket.close();
+						} catch(IOException e) {
+						}
+						MessageArea.append("leave.");
+						System.exit(1);
 					}
-					MessageArea.append("leave.");
-					System.exit(1);
+				}
+				if(btnGo.getActionListeners() != null) {
+					try {
+						in = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
+						String readSome = null;
+						while((readSome = in.readLine())!= null) {
+							MyArea.append(readSome+"\n");
+							MyArea.setCaretPosition(MyArea.getText().length());
+						}
+						in.close();
+						chatSocket.close();
+					} catch(IOException i) {
+						try {
+							if(in != null)in.close();
+							if(chatSocket != null) chatSocket.close();
+						} catch(IOException e) {
+						}
+						MessageArea.append("leave.");
+						System.exit(1);
+					}
 				}
 			}
 		}
 	}
-	
 }

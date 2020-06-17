@@ -34,7 +34,6 @@ public class BaseBallGame{
 					System.out.println("plz enter textfield!");
 				else
 				{
-					System.out.println("connect");
 					baseballstart.setVisible(false);
 					new Thread(new BaseBallClient(Server, Port)).start();
 				}
@@ -54,7 +53,7 @@ public class BaseBallGame{
 				{
 					System.out.println("createServer");
 					try {
-						new Thread(new BaseBallServer(Port)).start();
+						new Thread(new BaseBallServer(Server, Port)).start();
 					} catch (RemoteException e1) {
 						// TODO Auto-generated catch block
 						e1.printStackTrace();

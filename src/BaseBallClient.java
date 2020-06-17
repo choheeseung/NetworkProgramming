@@ -11,6 +11,8 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.BindException;
 import java.net.InetAddress;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.Random;
 import java.util.Scanner;
@@ -26,7 +28,10 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-public class BaseBallClient extends JFrame implements RMIClient, Runnable {
+public class BaseBallClient extends JFrame implements Runnable {
+	
+	BaseBallModel m = new BaseBallModel();
+	RMIServer server = null;
 	
 	static String eServer = "";
 	static int ePort = 0000;
@@ -44,6 +49,7 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 	JTextArea MessageArea;
 	JTextField NumField;
 	JTextArea MyArea;
+	JTextArea YourArea;
 	JTextField AnswerField;
 	
 	JButton btnSend;
@@ -61,14 +67,10 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
-		JLabel mine = new JLabel("My Board");
-		mine.setBounds(312, 7, 169, 50);
-		mine.setFont(new Font("Serif", Font.BOLD, 25));
-		contentPane.add(mine);
-		
 		MessageField = new JTextField();
 		MessageField.setBounds(509, 387, 188, 56);
 		contentPane.add(MessageField);
+		MessageField.setFont(new Font("Serif", Font.PLAIN, 14));
 		MessageField.setColumns(10);
 		
 		btnSend = new JButton("Send");
@@ -76,21 +78,24 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 		contentPane.add(btnSend);
 		
 		JTextArea YourArea = new JTextArea();
-		YourArea.setBounds(12, 64, 239, 315);
+		YourArea.setBounds(12, 94, 239, 285);
 		contentPane.add(YourArea);
 		
 		MessageArea = new JTextArea();
 		MessageArea.setBounds(509, 64, 267, 315);
 		contentPane.add(MessageArea);
+		MessageArea.setFont(new Font("Serif", Font.PLAIN, 14));
 		MessageArea.setEditable(false);
 		
 		NumField = new JTextField();
-		NumField.setBounds(258, 387, 169, 56);
+		NumField.setBounds(12, 387, 373, 56);
 		contentPane.add(NumField);
+		NumField.setFont(new Font("Serif", Font.PLAIN, 14));
 		NumField.setColumns(10);
 		
 		MyArea = new JTextArea();
-		MyArea.setBounds(258, 64, 239, 315);
+		MyArea.setBounds(258, 94, 239, 285);
+		MyArea.setFont(new Font("Serif", Font.PLAIN, 14));
 		contentPane.add(MyArea);
 		
 		JLabel Chat = new JLabel("Chatting");
@@ -99,23 +104,23 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 		contentPane.add(Chat);
 		
 		btnGo = new JButton("GO");
-		btnGo.setBounds(432, 385, 65, 58);
+		btnGo.setBounds(392, 385, 105, 58);
 		contentPane.add(btnGo);
 		
 		btnReady = new JButton("Ready");
-		btnReady.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				AnswerField.setEnabled(false);
-				btnReady.setEnabled(false);
-			}
-		});
-		btnReady.setBounds(186, 385, 65, 58);
+		btnReady.setBounds(392, 37, 105, 47);
 		contentPane.add(btnReady);
 		
 		AnswerField = new JTextField();
 		AnswerField.setColumns(10);
-		AnswerField.setBounds(12, 387, 169, 56);
+		AnswerField.setBounds(12, 38, 373, 46);
 		contentPane.add(AnswerField);
+		AnswerField.setFont(new Font("Serif", Font.PLAIN, 14));
+		
+		JLabel Info = new JLabel("Enter your own Number and Press READY Button");
+		Info.setBounds(12, 10, 485, 18);
+		Info.setFont(new Font("Serif", Font.BOLD, 17));
+		contentPane.add(Info);
 		
 		setVisible(true);
 		
@@ -135,44 +140,56 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 			c = (SSLSocket) f.createSocket(eServer, ePort);
 			c.startHandshake();
 			
+			System.out.println("before"); 
+			server = (RMIServer)Naming.lookup("rmi://"+eServer+"/BaseBall");
+			System.out.println("after");
+			
+			
 		} catch (BindException b) {
 			MessageArea.append("Can't bind on: "+ePort);
 			System.exit(1);
 		} catch (IOException i) {
 			System.out.println(i);
 			System.exit(1);
+		} catch (NotBoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
 		new Thread(new ClientReceiver(c)).start();
 		new Thread(new ClientSender(c)).start();
 		//button listener
-	}
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		BaseBallStart baseBallstart = new BaseBallStart();
 		
-		baseBallstart.userName.setText("user1");
-		baseBallstart.IP_addr.setText("127.0.0.1");
-		baseBallstart.port.setText("8888");
-
-		eServer = baseBallstart.IP_addr.getText();
-		ePort = Integer.parseInt(baseBallstart.port.getText());
-		
-		baseBallstart.connect_btn.addActionListener(new ActionListener() {
+		btnReady.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
-				if(baseBallstart.userName.getText().equals("")||baseBallstart.IP_addr.getText().equals("")||baseBallstart.port.getText().equals(""))
-					System.out.println("plz enter textfield!");
-				else
+				if (!AnswerField.getText().equals(""))
 				{
-					System.out.println("connect");
-					baseBallstart.setVisible(false);
-					new Thread(new BaseBallClient(eServer, ePort)).start();
+					m.setAnswer(AnswerField.getText());
+					btnReady.setEnabled(false);
 				}
 			}
 		});
+		
+		btnGo.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				if (!NumField.getText().equals(""))
+				{
+					String data = NumField.getText();
+					NumField.setText("");
+					try {
+						System.out.println(server.CheckStatus(m.answer, data));
+					} catch (RemoteException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+			}
+			
+		});
+		
 	}
 
 	class ClientSender implements Runnable {

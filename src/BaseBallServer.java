@@ -9,6 +9,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.BindException;
 import java.net.SocketTimeoutException;
+import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.security.KeyStore;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
 public class BaseBallServer extends JFrame implements RMIServer, Runnable{
-	static Vector<RMIClient> clientList;
+	static Vector<RMIServerImpl> clientList;
 	private JPanel contentPane;
 	static JTextArea log;
 	
@@ -39,7 +40,7 @@ public class BaseBallServer extends JFrame implements RMIServer, Runnable{
 	static String Server ="";
 	static int Port = 0000;
 	
-	BaseBallServer(int port) throws RemoteException {
+	BaseBallServer(String server, int port) throws RemoteException {
 		/*View*/
 		super("BASEBALL SERVER");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -57,11 +58,12 @@ public class BaseBallServer extends JFrame implements RMIServer, Runnable{
 		setVisible(true);
 		
 		/**/
+		this.Server = server;
 		this.Port = port;
 	}
 	
 	BaseBallServer() throws RemoteException {
-		clientList = new Vector<RMIClient>();
+		super();
 	}
 
 	@Override
@@ -96,6 +98,10 @@ public class BaseBallServer extends JFrame implements RMIServer, Runnable{
 			s = (SSLServerSocket) ssf.createServerSocket(Port);
 			log.append ("Server started: socket created on " + Port+"\n");
 			printServerSocketInfo(s);
+			
+			RMIServerImpl server = new RMIServerImpl(this);
+			Naming.rebind("rmi://"+Server+"/BaseBall", server);
+			System.out.println("hello");
 			
 			while (true) {
 				addClient(s);
@@ -206,8 +212,17 @@ public class BaseBallServer extends JFrame implements RMIServer, Runnable{
 		log.append("   Use client mode = "+s.getUseClientMode()+"\n");
 		log.setCaretPosition(log.getText().length());
 	}
+
+	@Override
+	public String CheckStatus(String answer, String data) throws RemoteException {
+		// TODO Auto-generated method stub
+		System.out.println("CheckStatus22");
+		return "CheckStatus22";
+		
+	}
 }
 class BaseBallServerRunnable implements Runnable {
+	
 	protected BaseBallServer bingoServer = null;
 	protected SSLSocket clientSocket = null;
 	protected PrintWriter out = null;

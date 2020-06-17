@@ -25,6 +25,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
+import javax.swing.SwingConstants;
 
 public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 	
@@ -49,7 +50,9 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 	JButton btnSend;
 	JButton btnGo;
 	JButton btnReady;
-	private JLabel Your;
+	
+	public int[] answer;
+	public int[] num;
 
 	/**
 	 * Create the frame.
@@ -62,11 +65,6 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
-		JLabel mine = new JLabel("My Board");
-		mine.setBounds(312, 7, 169, 50);
-		mine.setFont(new Font("Serif", Font.BOLD, 25));
-		contentPane.add(mine);
-		
 		MessageField = new JTextField();
 		MessageField.setBounds(509, 387, 188, 56);
 		contentPane.add(MessageField);
@@ -78,7 +76,7 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 		contentPane.add(btnSend);
 		
 		JTextArea YourArea = new JTextArea();
-		YourArea.setBounds(12, 64, 239, 315);
+		YourArea.setBounds(12, 94, 239, 285);
 		contentPane.add(YourArea);
 		
 		MessageArea = new JTextArea();
@@ -88,13 +86,13 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 		MessageArea.setEditable(false);
 		
 		NumField = new JTextField();
-		NumField.setBounds(258, 387, 169, 56);
+		NumField.setBounds(12, 387, 373, 56);
 		contentPane.add(NumField);
 		NumField.setFont(new Font("Serif", Font.PLAIN, 14));
 		NumField.setColumns(10);
 		
 		MyArea = new JTextArea();
-		MyArea.setBounds(258, 64, 239, 315);
+		MyArea.setBounds(258, 94, 239, 285);
 		MyArea.setFont(new Font("Serif", Font.PLAIN, 14));
 		contentPane.add(MyArea);
 		
@@ -104,29 +102,32 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 		contentPane.add(Chat);
 		
 		btnGo = new JButton("GO");
-		btnGo.setBounds(432, 385, 65, 58);
+		btnGo.setBounds(392, 385, 105, 58);
 		contentPane.add(btnGo);
 		
 		btnReady = new JButton("Ready");
 		btnReady.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				for(int i=0;i<3;i++) {
+					answer[i] = AnswerField.getText().charAt(i);
+				}
 				AnswerField.setEnabled(false);
 				btnReady.setEnabled(false);
 			}
 		});
-		btnReady.setBounds(186, 385, 65, 58);
+		btnReady.setBounds(392, 37, 105, 47);
 		contentPane.add(btnReady);
 		
 		AnswerField = new JTextField();
 		AnswerField.setColumns(10);
-		AnswerField.setBounds(12, 387, 169, 56);
+		AnswerField.setBounds(12, 38, 373, 46);
 		contentPane.add(AnswerField);
 		AnswerField.setFont(new Font("Serif", Font.PLAIN, 14));
 		
-		Your = new JLabel("Your Board");
-		Your.setFont(new Font("Serif", Font.BOLD, 25));
-		Your.setBounds(60, 7, 169, 50);
-		contentPane.add(Your);
+		JLabel Info = new JLabel("Enter your own Number and Press READY Button");
+		Info.setBounds(12, 10, 485, 18);
+		Info.setFont(new Font("Serif", Font.BOLD, 17));
+		contentPane.add(Info);
 		
 		setVisible(true);
 		
@@ -244,27 +245,47 @@ public class BaseBallClient extends JFrame implements RMIClient, Runnable {
 		public void run() {
 			while (chatSocket.isConnected()) {
 				BufferedReader in = null;
-				try {
-					in = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
-					String readSome = null;
-					while((readSome = in.readLine())!= null) {
-						MessageArea.append(readSome+"\n");
-						MessageArea.setCaretPosition(MessageArea.getText().length());
-					}
-
-					in.close();
-					chatSocket.close();
-				} catch(IOException i) {
+				if(btnSend.getActionListeners() != null) {
 					try {
-						if(in != null)in.close();
-						if(chatSocket != null) chatSocket.close();
-					} catch(IOException e) {
+						in = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
+						String readSome = null;
+						while((readSome = in.readLine())!= null) {
+							MessageArea.append(readSome+"\n");
+							MessageArea.setCaretPosition(MessageArea.getText().length());
+						}
+						in.close();
+						chatSocket.close();
+					} catch(IOException i) {
+						try {
+							if(in != null)in.close();
+							if(chatSocket != null) chatSocket.close();
+						} catch(IOException e) {
+						}
+						MessageArea.append("leave.");
+						System.exit(1);
 					}
-					MessageArea.append("leave.");
-					System.exit(1);
+				}
+				if(btnGo.getActionListeners() != null) {
+					try {
+						in = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
+						String readSome = null;
+						while((readSome = in.readLine())!= null) {
+							MyArea.append(readSome+"\n");
+							MyArea.setCaretPosition(MyArea.getText().length());
+						}
+						in.close();
+						chatSocket.close();
+					} catch(IOException i) {
+						try {
+							if(in != null)in.close();
+							if(chatSocket != null) chatSocket.close();
+						} catch(IOException e) {
+						}
+						MessageArea.append("leave.");
+						System.exit(1);
+					}
 				}
 			}
 		}
 	}
-	
 }

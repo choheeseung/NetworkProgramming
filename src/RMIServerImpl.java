@@ -14,7 +14,7 @@ public class RMIServerImpl extends UnicastRemoteObject implements RMIServer{
 	@Override
 	public String CheckStatus(String answer, String data) throws RemoteException {
 		// TODO Auto-generated method stub
-		bs.CheckStatus("hi", "helo");
+		bs.CheckStatus("hi", "hello");
 		return "This is CheckStatus";
 	}
 	

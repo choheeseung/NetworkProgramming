@@ -2,7 +2,7 @@ import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
 
 public class RMIServerImpl extends UnicastRemoteObject implements RMIServer{
-	BaseBallServer bs = null;
+	BaseBallServer bs;
 	protected RMIServerImpl(BaseBallServer bs) throws RemoteException {
 		super();
 		// TODO Auto-generated constructor stub
@@ -12,10 +12,10 @@ public class RMIServerImpl extends UnicastRemoteObject implements RMIServer{
 	private static final long serialVersionUID = 1L;
 
 	@Override
-	public String CheckStatus(String answer, String data) throws RemoteException {
+	public String CheckStatus(int UserID, String data) throws RemoteException {
 		// TODO Auto-generated method stub
-		bs.CheckStatus("hi", "helo");
-		return "This is CheckStatus";
+		
+		return bs.answer.get(UserID);
 	}
 	
 }

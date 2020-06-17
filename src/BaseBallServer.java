@@ -13,6 +13,8 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.security.KeyStore;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -28,7 +30,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
-public class BaseBallServer extends JFrame implements RMIServer, Runnable{
+public class BaseBallServer extends JFrame implements Runnable{
 	static Vector<RMIServerImpl> clientList;
 	private JPanel contentPane;
 	static JTextArea log;
@@ -39,6 +41,7 @@ public class BaseBallServer extends JFrame implements RMIServer, Runnable{
 	//private static int Port = -1;
 	static String Server ="";
 	static int Port = 0000;
+	Map<Integer, String> answer;
 	
 	BaseBallServer(String server, int port) throws RemoteException {
 		/*View*/
@@ -60,6 +63,7 @@ public class BaseBallServer extends JFrame implements RMIServer, Runnable{
 		/**/
 		this.Server = server;
 		this.Port = port;
+		answer = new HashMap<Integer, String>();
 	}
 	
 	BaseBallServer() throws RemoteException {
@@ -74,8 +78,8 @@ public class BaseBallServer extends JFrame implements RMIServer, Runnable{
 		final KeyManagerFactory kmf;
 		final SSLContext sc;
 		
-		final String runRoot = "C:\\Users\\Heeseung\\git\\NetworkProgramming\\bin\\";  // root change : your system root
-		//final String runRoot = "C:\\Users\\geun\\NP\\NetworkProgramming\\bin\\";  // root change : your system root
+		//final String runRoot = "C:\\Users\\Heeseung\\git\\NetworkProgramming\\bin\\";  // root change : your system root
+		final String runRoot = "C:\\Users\\geun\\NP\\NetworkProgramming\\bin\\";  // root change : your system root
 		
 		SSLServerSocketFactory ssf = null;
 		SSLServerSocket s = null;
@@ -101,7 +105,7 @@ public class BaseBallServer extends JFrame implements RMIServer, Runnable{
 			
 			RMIServerImpl server = new RMIServerImpl(this);
 			Naming.rebind("rmi://"+Server+"/BaseBall", server);
-			System.out.println("hello");
+			log.append("RMI connect");
 			
 			while (true) {
 				addClient(s);
@@ -213,12 +217,14 @@ public class BaseBallServer extends JFrame implements RMIServer, Runnable{
 		log.setCaretPosition(log.getText().length());
 	}
 
-	@Override
-	public String CheckStatus(String answer, String data) throws RemoteException {
-		// TODO Auto-generated method stub
-		System.out.println("CheckStatus22");
-		return "CheckStatus22";
-		
+	public void setAnswer(int clientID, String substring) {
+		for (int i = 0; i < clientCount; i++)
+		{
+			if (clients[i].getClientID() != clientID) {
+				answer.put(clients[i].getClientID(), substring);
+				System.out.println(clientID+", "+clients[i].getClientID()+", "+substring);
+			} 
+		}
 	}
 }
 class BaseBallServerRunnable implements Runnable {
@@ -244,7 +250,21 @@ class BaseBallServerRunnable implements Runnable {
 		try {
 			String inputLine;
 			while((inputLine = in.readLine())!= null) {
-				bingoServer.putClient(getClientID(), getClientID() + " : "+inputLine);
+				if (inputLine.charAt(0) == '#')
+				{
+					//ÃßÃø Number
+					bingoServer.putClient(getClientID(), inputLine);
+				}
+				else if (inputLine.charAt(0) == '@')
+				{
+					//UserÀÇ answer
+					bingoServer.setAnswer(getClientID(), inputLine.substring(1));
+					out.println("@"+getClientID());
+				}
+				else
+				{
+					bingoServer.putClient(getClientID(), getClientID() + " : "+inputLine);
+				}
 				if (inputLine.equalsIgnoreCase("Bye."))
 					break;
 			}

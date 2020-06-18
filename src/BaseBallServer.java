@@ -79,7 +79,8 @@ public class BaseBallServer extends JFrame implements Runnable{
 		final SSLContext sc;
 		
 		//final String runRoot = "C:\\Users\\Heeseung\\git\\NetworkProgramming\\bin\\";  // root change : your system root
-		final String runRoot = "C:\\Users\\geun\\NP\\NetworkProgramming\\bin\\";  // root change : your system root
+		//final String runRoot = "C:\\Users\\geun\\NP\\NetworkProgramming\\bin\\";  // root change : your system root
+		final String runRoot = "./";  // root change : your system root
 		
 		SSLServerSocketFactory ssf = null;
 		SSLServerSocket s = null;

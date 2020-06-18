@@ -78,8 +78,8 @@ public class BaseBallServer extends JFrame implements Runnable{
 		final KeyManagerFactory kmf;
 		final SSLContext sc;
 		
-		final String runRoot = "C:\\Users\\Heeseung\\git\\NetworkProgramming\\bin\\";  // root change : your system root
-		//final String runRoot = "C:\\Users\\geun\\NP\\NetworkProgramming\\bin\\";  // root change : your system root
+		//final String runRoot = "C:\\Users\\Heeseung\\git\\NetworkProgramming\\bin\\";  // root change : your system root
+		final String runRoot = "C:\\Users\\geun\\NP\\NetworkProgramming\\bin\\";  // root change : your system root
 		
 		SSLServerSocketFactory ssf = null;
 		SSLServerSocket s = null;
@@ -145,6 +145,7 @@ public class BaseBallServer extends JFrame implements Runnable{
 			} else {
 				log.append("write: "+clients[i].getClientID()+"\n");
 				clients[i].out.println(inputLine);
+				clients[i].out.flush();
 			}
 		log.setCaretPosition(log.getText().length());
 	}
@@ -226,6 +227,27 @@ public class BaseBallServer extends JFrame implements Runnable{
 			} 
 		}
 	}
+	public synchronized void SendResult(int clientID) {
+		for (int i = 0; i < clientCount; i++)
+		{
+			if (clients[i].getClientID() == clientID)
+			{
+				clients[i].out.println("$You are WIN!!");
+			} 
+			else
+			{
+				clients[i].out.println("$You are LOSE.");
+			}
+			clients[i].out.flush();
+		}
+	}
+	public synchronized void NewGame() {
+		for (int i = 0; i < clientCount; i++)
+		{
+			clients[i].out.println("$NEWGAME");
+			clients[i].out.flush();
+		}
+	}
 }
 class BaseBallServerRunnable implements Runnable {
 	
@@ -260,10 +282,16 @@ class BaseBallServerRunnable implements Runnable {
 					//UserÀÇ answer
 					bingoServer.setAnswer(getClientID(), inputLine.substring(1));
 					out.println("@"+getClientID());
+					out.flush();
+				}
+				else if (inputLine.equals("$NEWGAME"))
+				{
+					bingoServer.answer.clear();
+					bingoServer.NewGame();
 				}
 				else
 				{
-					bingoServer.putClient(getClientID(), getClientID() + " : "+inputLine);
+					bingoServer.putClient(getClientID(), inputLine);
 				}
 				if (inputLine.equalsIgnoreCase("Bye."))
 					break;

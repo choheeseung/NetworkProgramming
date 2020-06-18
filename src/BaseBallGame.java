@@ -10,7 +10,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 public class BaseBallGame{
-	
+	static String userName = "";
 	static String Server ="";
 	static int Port = 0;
 	public static void main(String[] args) throws RemoteException {
@@ -18,13 +18,11 @@ public class BaseBallGame{
 		
 		
 		BaseBallStart baseballstart = new BaseBallStart();
-		
-		baseballstart.userName.setText("user1");
+		baseballstart.userName.setText("user123");
 		baseballstart.IP_addr.setText("127.0.0.1");
 		baseballstart.port.setText("8888");
 
-		Server = baseballstart.IP_addr.getText();
-		Port = Integer.parseInt(baseballstart.port.getText());
+		
 		
 		baseballstart.connect_btn.addActionListener(new ActionListener() {
 			@Override
@@ -34,8 +32,11 @@ public class BaseBallGame{
 					System.out.println("plz enter textfield!");
 				else
 				{
+					userName = baseballstart.userName.getText();
+					Server = baseballstart.IP_addr.getText();
+					Port = Integer.parseInt(baseballstart.port.getText());
 					baseballstart.setVisible(false);
-					new Thread(new BaseBallClient(Server, Port)).start();
+					new Thread(new BaseBallClient(userName, Server, Port)).start();
 				}
 			}
 			
@@ -51,6 +52,8 @@ public class BaseBallGame{
 					System.out.println("plz enter port!");
 				else
 				{
+					Server = baseballstart.IP_addr.getText();
+					Port = Integer.parseInt(baseballstart.port.getText());
 					System.out.println("createServer");
 					try {
 						new Thread(new BaseBallServer(Server, Port)).start();

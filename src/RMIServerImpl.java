@@ -10,8 +10,8 @@ public class RMIServerImpl extends UnicastRemoteObject implements RMIServer{
 	}
 	
 	private static final long serialVersionUID = 1L;
-	int fromClientNumber[] = new int[3];
-	int fromServerNumber[] = new int[3];
+	int [] fromClientNumber;
+	int [] fromServerNumber;
 
 	@Override
 	public String CheckStatus(int UserID, String num) throws RemoteException {
@@ -19,6 +19,9 @@ public class RMIServerImpl extends UnicastRemoteObject implements RMIServer{
 		String answer = bs.answer.get(UserID);
 		num = num.replaceAll("[^0-9]", "");
 		answer = answer.replaceAll("[^0-9]", "");
+		
+		fromClientNumber = new int[num.length()];
+		fromServerNumber = new int[answer.length()];
 		for(int i=0; i<num.length(); i++) {
 			fromClientNumber[i] = num.charAt(i) - '0';
 			fromServerNumber[i] = answer.charAt(i) - '0';	
@@ -36,8 +39,12 @@ public class RMIServerImpl extends UnicastRemoteObject implements RMIServer{
 			}
 		}
 		String result = strike +" strike "+ ball +" ball";
-		if (strike == 3) {
-			result = strike +" strike "+ ball +" ball " + "YOU WIN!!!";
+		if (strike == answer.length()) {
+			bs.SendResult(UserID);
+		} 
+		else if (strike < 1 && ball < 1)
+		{
+			result = "Out";
 		}
 		return result;
 	}

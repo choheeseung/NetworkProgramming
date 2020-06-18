@@ -33,11 +33,14 @@ import javax.swing.SwingConstants;
 
 public class BaseBallClient extends JFrame implements Runnable {
 
-	BaseBallModel m = new BaseBallModel();
+//	BaseBallModel m = new BaseBallModel();
 	RMIServer server = null;
 
 	static String eServer = "";
 	static int ePort = 0000;
+	String userName = "";
+	int userID = 0000;
+	
 
 	// SSL
 	SSLSocketFactory f = null;
@@ -48,6 +51,8 @@ public class BaseBallClient extends JFrame implements Runnable {
 	// View
 	private JPanel contentPane;
 
+	JLabel Answerlabel;
+	
 	JTextField MessageField;
 	JTextArea MessageArea;
 	JTextField NumField;
@@ -58,14 +63,17 @@ public class BaseBallClient extends JFrame implements Runnable {
 	JButton btnSend;
 	JButton btnGo;
 	JButton btnReady;
-
-	public int[] answer = new int[3];
-	public int[] num = new int[3];
+	JButton btnNew;
+	/*
+	 * public int[] answer = new int[3]; public int[] num = new int[3];
+	 */
 
 	/**
 	 * Create the frame.
 	 */
-	BaseBallClient(String server, int port) {
+	BaseBallClient(String userName, String server, int port) {
+		super("BASEBALL GAME CLIENT");
+		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(200, 200, 806, 500);
 		contentPane = new JPanel();
@@ -83,7 +91,7 @@ public class BaseBallClient extends JFrame implements Runnable {
 		btnSend.setBounds(698, 387, 78, 56);
 		btnSend.setFont(new Font("Serif", Font.PLAIN, 14));
 		contentPane.add(btnSend);
-
+		
 		MyArea = new JTextArea();
 		MyArea.setBounds(12, 120, 239, 259);
 		MyArea.setFont(new Font("Serif", Font.PLAIN, 14));
@@ -94,7 +102,7 @@ public class BaseBallClient extends JFrame implements Runnable {
 		contentPane.add(MessageArea);
 		MessageArea.setFont(new Font("Serif", Font.PLAIN, 14));
 		MessageArea.setEditable(false);
-
+		
 		NumField = new JTextField();
 		NumField.setBounds(12, 387, 373, 56);
 		contentPane.add(NumField);
@@ -106,9 +114,10 @@ public class BaseBallClient extends JFrame implements Runnable {
 		YourArea.setFont(new Font("Serif", Font.PLAIN, 14));
 		contentPane.add(YourArea);
 
-		JLabel Chat = new JLabel("Chatting");
+		JLabel Chat = new JLabel("Chatting : "+userName);
 		Chat.setFont(new Font("Serif", Font.BOLD, 25));
-		Chat.setBounds(598, 10, 164, 44);
+		Chat.setBounds(509, 10, 267, 44);
+		Chat.setHorizontalAlignment(JLabel.CENTER);
 		contentPane.add(Chat);
 
 		btnGo = new JButton("GO");
@@ -117,17 +126,28 @@ public class BaseBallClient extends JFrame implements Runnable {
 		contentPane.add(btnGo);
 
 		btnReady = new JButton("Ready");
-		btnReady.setBounds(392, 37, 105, 47);
+		btnReady.setBounds(258, 37, 115, 47);
 		btnReady.setFont(new Font("Serif", Font.PLAIN, 14));
 		contentPane.add(btnReady);
+		
+		btnNew = new JButton("NewGame");
+		btnNew.setBounds(382, 37, 115, 47);
+		btnNew.setFont(new Font("Serif", Font.PLAIN, 14));
+		contentPane.add(btnNew);
 
 		AnswerField = new JTextField();
 		AnswerField.setColumns(10);
-		AnswerField.setBounds(12, 38, 373, 46);
+		AnswerField.setBounds(12, 38, 239, 46);
 		contentPane.add(AnswerField);
 		AnswerField.setFont(new Font("Serif", Font.PLAIN, 14));
 
-		JLabel Info = new JLabel("Enter 3 Numbers and Press READY Button");
+		Answerlabel = new JLabel();
+		Answerlabel.setBounds(12, 38, 239, 46);
+		contentPane.add(Answerlabel);
+		AnswerField.setFont(new Font("Serif", Font.PLAIN, 14));
+		Answerlabel.setVisible(false);
+		
+		JLabel Info = new JLabel("Enter Non-duplicate 3 or 4 digits Numbers and Press READY");
 		Info.setBounds(12, 10, 485, 18);
 		Info.setFont(new Font("Serif", Font.BOLD, 17));
 		contentPane.add(Info);
@@ -143,7 +163,7 @@ public class BaseBallClient extends JFrame implements Runnable {
 		contentPane.add(lbYour);
 
 		setVisible(true);
-
+		this.userName = userName;
 		this.eServer = server;
 		this.ePort = port;
 	}
@@ -180,7 +200,6 @@ public class BaseBallClient extends JFrame implements Runnable {
 
 	class ClientSender implements Runnable {
 		private SSLSocket chatSocket = null;
-		// BufferedWriter out = null;
 		PrintWriter out = null;
 
 		ClientSender(SSLSocket socket) {
@@ -190,17 +209,15 @@ public class BaseBallClient extends JFrame implements Runnable {
 		public void run() {
 
 			try {
-				// out = new BufferedWriter(new
-				// OutputStreamWriter(chatSocket.getOutputStream()));
 				out = new PrintWriter(chatSocket.getOutputStream(), true);
 
 				btnSend.addActionListener(new ActionListener() {
 					@Override
 					public void actionPerformed(ActionEvent e) {
 						// TODO Auto-generated method stub
-						String userInput = MessageField.getText();
+						String userInput = userName+ " : " +MessageField.getText();
 						MessageField.setText("");
-						MessageArea.append(chatSocket.getLocalPort() + " : " + userInput + "\n");
+						MessageArea.append(userInput + "\n");
 						out.println(userInput);
 						out.flush();
 					}
@@ -213,19 +230,17 @@ public class BaseBallClient extends JFrame implements Runnable {
 							String userInput = NumField.getText();
 							String result = "";
 							NumField.setText("");
-							for(int i=0; i<userInput.length(); i++) {
-								num[i] = userInput.charAt(i) - '0';		
-							}
 							try {
-								result = server.CheckStatus(m.userID, Arrays.toString(num));
+								result = server.CheckStatus(userID, userInput);
 							} catch (RemoteException e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
-							MyArea.append(Arrays.toString(num) + " : " + result + "\n");
+							MyArea.append(userInput + " : " + result + "\n");
 							MyArea.setCaretPosition(MessageArea.getText().length());
-							out.println("#"+Arrays.toString(num) + " : " + result);
+							out.println("#"+userInput + " : " + result);
 							out.flush();
+							btnGo.setEnabled(false);
 						}
 					}
 				});
@@ -234,15 +249,43 @@ public class BaseBallClient extends JFrame implements Runnable {
 					public void actionPerformed(ActionEvent e) {
 						// TODO Auto-generated method stub
 						if (!AnswerField.getText().equals("")) {
-							//m.setAnswer(AnswerField.getText());
 							String userAnswer = AnswerField.getText();
-							for(int i=0; i<userAnswer.length(); i++) {
-								answer[i] = userAnswer.charAt(i) - '0';		
+							char [] tmp = userAnswer.toCharArray();
+							boolean checkduplicate = false;
+							/* duplicate check */
+							for(int i = 0 ; i < userAnswer.length(); i++)
+								for(int j = userAnswer.length()-1 ; j > i; j--)
+									if (tmp[i] == tmp[j])
+										checkduplicate = true;
+							
+							if (checkduplicate) {
+								MessageArea.append("Please Input Non-Duplicate Number\n");
 							}
-							out.println("@"+Arrays.toString(answer));
-							btnReady.setEnabled(false);
+							else
+							{
+								Answerlabel.setText(userAnswer);
+								AnswerField.setText("");
+								AnswerField.setVisible(false);
+								Answerlabel.setVisible(true);
+								out.println("@"+userAnswer);
+								out.flush();
+								btnReady.setEnabled(false);
+							}
+						}
+						else
+						{
+							MessageArea.append("Please Input Non-Duplicate Number\n");
 						}
 					}
+				});
+				btnNew.addActionListener(new ActionListener() {
+					@Override
+					public void actionPerformed(ActionEvent e) {
+						// TODO Auto-generated method stub
+						out.println("$NEWGAME");
+						out.flush();
+					}
+					
 				});
 			} catch (IOException i) {
 				try {
@@ -270,21 +313,38 @@ public class BaseBallClient extends JFrame implements Runnable {
 					try {
 						in = new BufferedReader(new InputStreamReader(chatSocket.getInputStream()));
 						String readSome = null;
-						while ((readSome = in.readLine()) != null) {							
-							if (readSome.charAt(0) == '#')
+						while ((readSome = in.readLine()) != null) {			
+							if (readSome.equals("$NEWGAME"))
+							{
+								AnswerField.setVisible(true);
+								Answerlabel.setText("");
+								Answerlabel.setVisible(false);
+								YourArea.setText("");
+								MyArea.setText("");
+								btnReady.setEnabled(true);
+								btnGo.setEnabled(true);
+							}
+							else if (readSome.charAt(0) == '#')
 							{
 								YourArea.append(readSome.substring(1) + "\n");
 								YourArea.setCaretPosition(MessageArea.getText().length());
+								btnGo.setEnabled(true);
 							}
 							else if(readSome.charAt(0) == '@') //´ä
 							{
-								m.userID = Integer.parseInt(readSome.substring(1));
+								userID = Integer.parseInt(readSome.substring(1));
+							}
+							else if(readSome.charAt(0) == '$')
+							{
+								MessageArea.append(readSome.substring(1) + "\n");
+								btnGo.setEnabled(false);
 							}
 							else 
 							{
 								MessageArea.append(readSome + "\n");
 								MessageArea.setCaretPosition(MessageArea.getText().length());
 							}
+							
 						}
 						in.close();
 						chatSocket.close();

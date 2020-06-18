@@ -1,5 +1,8 @@
 # NetworkProgramming
 동작 방법
+bin, src 폴더 또는 BaseBall.zip 파일을 다운받아 압축을 풀고 cmd로 소스파일의 위치로 간다.
+
+
 C:\javac *.java
 
 C:\start rmiregistry
